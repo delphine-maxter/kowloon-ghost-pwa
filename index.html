@@ -17,7 +17,7 @@
     header { padding:12px 16px; background:var(--panel); border-bottom:1px solid #222; }
     header h1 { font-size:1.05rem; margin:0; font-weight:700; }
     header .sub { font-size:.85rem; color:var(--muted); margin-top:2px; }
-    #map { width:100%; height: calc(100vh - 240px); }
+    #map { width:100%; height: calc(100vh - 280px); }
     .panel { padding:12px 16px; background:var(--panel); border-top:1px solid #222; }
     .btn { background:var(--brand); color:#fff; border:none; padding:10px 14px; border-radius:8px; font-size:.95rem; }
     .btn.alt { background:#2a2a2a; color:#eaeaea; border:1px solid #333; }
@@ -47,6 +47,10 @@
       <button id="toggleExtension" class="btn alt" aria-label="Toggle Kowloon Walled City extension">🏯 Toggle Walled City Extension</button>
       <a id="gmapsWc" class="btn alt" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/Temple+Street+Night+Market,+Hong+Kong/Kowloon+Walled+City+Park,+Tung+Tau+Tsuen,+Hong+Kong/">🏃‍♀️ Extension in Google Maps</a>
     </div>
+    <div class="grid">
+      <button id="toggleFood" class="btn alt" aria-label="Toggle Man Fat Seafood Restaurant">🍲 Toggle Man Fat Seafood</button>
+      <a class="btn alt" target="_blank" rel="noopener" href="https://www.openrice.com/en/hongkong/r-man-fat-seafood-restaurant-sham-shui-po-guangdong-seafood-r495907">🔗 OpenRice page</a>
+    </div>
 
     <details open>
       <summary>Story Guide (tap to expand/collapse)</summary>
@@ -67,8 +71,10 @@
         “Red brick and stained glass evoke quiet echoes of the past. Some visitors feel a sudden hush—like unseen parishioners gathering for a midnight mass.” （聖安德烈堂：寂靜之中，似有低語禱告。）</p>
 
         <p><em>Extension:</em> <strong>Kowloon Walled City Park (Kowloon City)</strong> — better by taxi/bus from Temple Street (10–20 mins). “The labyrinth is gone, but its ghosts wander still—seeking alleys that no longer exist.” （九龍城寨公園：城寨已逝，陰魂未散。）</p>
+
+        <p><em>Food Stop (Optional):</em> <strong>Man Fat Seafood Restaurant</strong> — G/F, 55 Fuk Wa Street, Sham Shui Po. Perfect for a late-night feast after haunting tales. （萬發海鮮菜館：深水埗福華街55號）</p>
       </div>
-      <div class="legend">Legend: <span style="color:#c00000">■</span> Main route · <span style="color:#8a2be2">■</span> Walled City extension</div>
+      <div class="legend">Legend: <span style="color:#c00000">■</span> Main route · <span style="color:#8a2be2">■</span> Walled City extension · <span style="color:#2e8b57">■</span> Food stop</div>
     </details>
   </div>
 
@@ -87,9 +93,10 @@
     maxZoom: 19, attribution: '&copy; OpenStreetMap' 
   }).addTo(map);
 
-  // Ghost icon
+  // Icons
   const ghostIcon = L.divIcon({ html: '👻', className: 'ghost-marker', iconSize: [24,24] });
   const templeIcon = L.divIcon({ html: '🏯', className: 'temple-marker', iconSize: [24,24] });
+  const foodIcon = L.divIcon({ html: '🍲', className: 'food-marker', iconSize: [24,24] });
 
   // Main route stops (walkable cluster)
   const stops = [
@@ -97,7 +104,7 @@
     { name: 'Tin Hau Temple (Yau Ma Tei)', coords: [22.3110, 114.1709], html: '<strong>Tin Hau Temple</strong><br/>“Incense curls like spirits rising…”' },
     { name: 'Shanghai Street (Tong Lau segment)', coords: [22.3101, 114.1715], html: '<strong>Shanghai Street</strong><br/>“Look up at the tong lau balconies…”' },
     { name: 'Temple Street Night Market', coords: [22.3108, 114.1700], html: '<strong>Temple Street Night Market</strong><br/>“Under neon glow, the market hums with life…”' },
-    { name: 'St Andrew\'s Church (Jordan)', coords: [22.3049, 114.1719], html: '<strong>St Andrew\'s Church (Jordan)</strong><br/>“Red brick and stained glass evoke quiet echoes…”' }
+    { name: 'St Andrew's Church (Jordan)', coords: [22.3049, 114.1719], html: '<strong>St Andrew's Church (Jordan)</strong><br/>“Red brick and stained glass evoke quiet echoes…”' }
   ];
 
   const mainMarkers = [];
@@ -117,8 +124,7 @@
   const wcRoute = L.polyline(wcStops.map(s => s.coords), { color:'#8a2be2', weight:3 });
 
   let wcVisible = false;
-  const toggleBtn = document.getElementById('toggleExtension');
-  toggleBtn.addEventListener('click', () => {
+  document.getElementById('toggleExtension').addEventListener('click', () => {
     wcVisible = !wcVisible;
     if (wcVisible) {
       wcMarkers.forEach(m => m.addTo(map));
@@ -128,6 +134,22 @@
     } else {
       wcMarkers.forEach(m => map.removeLayer(m));
       map.removeLayer(wcRoute);
+      const group = new L.featureGroup([...mainMarkers, mainRoute]);
+      map.fitBounds(group.getBounds().pad(0.2));
+    }
+  });
+
+  // Man Fat Seafood Restaurant marker (food stop)
+  const manFatCoords = [22.32595, 114.17083];
+  const manFat = L.marker(manFatCoords, { icon: foodIcon }).bindPopup(`<div style="min-width:220px"><div><strong>Man Fat Seafood Restaurant</strong></div><div>📍 G/F, 55 Fuk Wa Street, Sham Shui Po<br/><a href="https://www.openrice.com/en/hongkong/r-man-fat-seafood-restaurant-sham-shui-po-guangdong-seafood-r495907" target="_blank" rel="noopener">OpenRice page</a></div><div>“Classic Cantonese seafood—perfect for ending the haunted walk.”</div></div>`);
+  let foodVisible = false;
+  document.getElementById('toggleFood').addEventListener('click', () => {
+    foodVisible = !foodVisible;
+    if (foodVisible) {
+      manFat.addTo(map);
+      map.setView(manFatCoords, 17);
+    } else {
+      map.removeLayer(manFat);
       const group = new L.featureGroup([...mainMarkers, mainRoute]);
       map.fitBounds(group.getBounds().pad(0.2));
     }
@@ -154,7 +176,6 @@
     });
   }
 
-  // Handle beforeinstallprompt if you want to add a custom install flow later
   let deferredPrompt;
   window.addEventListener('beforeinstallprompt', (e) => { deferredPrompt = e; });
 </script>
