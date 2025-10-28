@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Shadows of Kowloon – Haunted Streets & Forgotten Souls</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b0b0b" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="apple-touch-icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='192' height='192'><rect width='100%' height='100%' fill='%230b0b0b'/><text x='50%' y='55%' font-size='110' text-anchor='middle' fill='%23c00000'>👻</text></svg>"> 
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <style>
+    :root { --bg:#0b0b0b; --panel:#141414; --brand:#c00000; --text:#eaeaea; --muted:#aaaaaa; }
+    html, body { height:100%; margin:0; background:var(--bg); color:var(--text); font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji; }
+    #app { display:grid; grid-template-rows:auto 1fr auto; height:100%; }
+    header { padding:12px 16px; background:var(--panel); border-bottom:1px solid #222; }
+    header h1 { font-size:1.05rem; margin:0; font-weight:700; }
+    header .sub { font-size:.85rem; color:var(--muted); margin-top:2px; }
+    #map { width:100%; height: calc(100vh - 240px); }
+    .panel { padding:12px 16px; background:var(--panel); border-top:1px solid #222; }
+    .btn { background:var(--brand); color:#fff; border:none; padding:10px 14px; border-radius:8px; font-size:.95rem; }
+    .btn.alt { background:#2a2a2a; color:#eaeaea; border:1px solid #333; }
+    .grid { display:grid; gap:8px; grid-template-columns:1fr 1fr; margin-bottom:10px; }
+    details { background:#0f0f0f; border:1px solid #222; border-radius:8px; padding:8px 10px; }
+    summary { cursor:pointer; font-weight:600; }
+    a { color:#9ad0ff; text-decoration:none; }
+    footer { padding:10px 16px; font-size:.8rem; color:var(--muted); background:var(--panel); }
+    .legend { font-size:.8rem; color:var(--muted); margin-top:6px; }
+  </style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>Shadows of Kowloon – Haunted Streets &amp; Forgotten Souls</h1>
+    <div class="sub">鬼故事 (Ghost Story) · 小心 (Beware)</div>
+  </header>
+
+  <div id="map" role="application" aria-label="Kowloon Ghost Tour Map"></div>
+
+  <div class="panel">
+    <div class="grid">
+      <button id="locateBtn" class="btn" aria-label="Center on my location">📍 Locate Me</button>
+      <a id="gmapsLink" class="btn alt" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/Yau+Ma+Tei+Theatre,+Yau+Ma+Tei,+Hong+Kong/Tin+Hau+Temple,+Yau+Ma+Tei,+Hong+Kong/Shanghai+Street,+Yau+Ma+Tei,+Hong+Kong/Temple+Street+Night+Market,+Hong+Kong/St+Andrew%E2%80%99s+Church,+138+Nathan+Rd,+Tsim+Sha+Tsui,+Hong+Kong/">🗺️ Open in Google Maps</a>
+    </div>
+    <div class="grid">
+      <button id="toggleExtension" class="btn alt" aria-label="Toggle Kowloon Walled City extension">🏯 Toggle Walled City Extension</button>
+      <a id="gmapsWc" class="btn alt" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/Temple+Street+Night+Market,+Hong+Kong/Kowloon+Walled+City+Park,+Tung+Tau+Tsuen,+Hong+Kong/">🏃‍♀️ Extension in Google Maps</a>
+    </div>
+
+    <details open>
+      <summary>Story Guide (tap to expand/collapse)</summary>
+      <div>
+        <p><strong>1) Yau Ma Tei Theatre · 15 mins</strong><br>
+        “The flicker of old reels never truly fades. They say a projectionist once stayed late, only to hear applause from an empty hall. Some swear the balcony seats are never vacant—ghostly patrons linger, waiting for the next show.”</p>
+
+        <p><strong>2) Tin Hau Temple (Yau Ma Tei) · 20 mins</strong><br>
+        “Incense curls like spirits rising. Fishermen prayed here for safe voyages, but whispers claim those lost at sea return to seek blessings. After dark, fortune tellers sense unseen presences—perhaps souls still pleading for calm waters.” （天后廟：在香煙裊裊中，靈氣盤旋。）</p>
+
+        <p><strong>3) Shanghai Street · 20 mins</strong><br>
+        “Look up at the tong lau balconies. During the Japanese occupation, screams echoed through these alleys. Today, residents report footsteps pacing above—though the rooms have long been abandoned.” （小心：樓上腳步聲，無人可見。）</p>
+
+        <p><strong>4) Temple Street Night Market · 30 mins</strong><br>
+        “Under neon glow, the market hums with life. Yet vendors tell of customers who vanish before paying, leaving only a chill. Fortune tellers whisper warnings—sometimes the spirits come to bargain too.” （廟街：問卜有靈，陰風陣陣。）</p>
+
+        <p><strong>5) St Andrew’s Church (Jordan) · 15–20 mins</strong><br>
+        “Red brick and stained glass evoke quiet echoes of the past. Some visitors feel a sudden hush—like unseen parishioners gathering for a midnight mass.” （聖安德烈堂：寂靜之中，似有低語禱告。）</p>
+
+        <p><em>Extension:</em> <strong>Kowloon Walled City Park (Kowloon City)</strong> — better by taxi/bus from Temple Street (10–20 mins). “The labyrinth is gone, but its ghosts wander still—seeking alleys that no longer exist.” （九龍城寨公園：城寨已逝，陰魂未散。）</p>
+      </div>
+      <div class="legend">Legend: <span style="color:#c00000">■</span> Main route · <span style="color:#8a2be2">■</span> Walled City extension</div>
+    </details>
+  </div>
+
+  <footer>
+    Install: Android (Chrome) → ⋮ → Add to Home screen · iPhone (Safari) → Share → Add to Home Screen
+  </footer>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+  // Initialize map
+  const map = L.map('map', { zoomControl: true }).setView([22.3110, 114.1710], 15.8);
+
+  // Base tiles
+  const tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19, attribution: '&copy; OpenStreetMap' 
+  }).addTo(map);
+
+  // Ghost icon
+  const ghostIcon = L.divIcon({ html: '👻', className: 'ghost-marker', iconSize: [24,24] });
+  const templeIcon = L.divIcon({ html: '🏯', className: 'temple-marker', iconSize: [24,24] });
+
+  // Main route stops (walkable cluster)
+  const stops = [
+    { name: 'Yau Ma Tei Theatre', coords: [22.3116, 114.1703], html: '<strong>Yau Ma Tei Theatre</strong><br/>“The flicker of old reels never truly fades…”<br/><small>鬼故事 · 小心</small>' },
+    { name: 'Tin Hau Temple (Yau Ma Tei)', coords: [22.3110, 114.1709], html: '<strong>Tin Hau Temple</strong><br/>“Incense curls like spirits rising…”' },
+    { name: 'Shanghai Street (Tong Lau segment)', coords: [22.3101, 114.1715], html: '<strong>Shanghai Street</strong><br/>“Look up at the tong lau balconies…”' },
+    { name: 'Temple Street Night Market', coords: [22.3108, 114.1700], html: '<strong>Temple Street Night Market</strong><br/>“Under neon glow, the market hums with life…”' },
+    { name: 'St Andrew\'s Church (Jordan)', coords: [22.3049, 114.1719], html: '<strong>St Andrew\'s Church (Jordan)</strong><br/>“Red brick and stained glass evoke quiet echoes…”' }
+  ];
+
+  const mainMarkers = [];
+  stops.forEach((s, idx) => {
+    const m = L.marker(s.coords, { icon: ghostIcon }).addTo(map)
+      .bindPopup(`<div style="min-width:200px"><div><strong>${idx+1}. ${s.name}</strong></div><div>${s.html}</div></div>`);
+    mainMarkers.push(m);
+  });
+  const mainRoute = L.polyline(stops.map(s => s.coords), { color:'#c00000', weight:3 }).addTo(map);
+
+  // Walled City extension markers
+  const wcStops = [
+    { name: 'Kowloon Walled City Park – South Gate', coords: [22.3336, 114.1917], html: '<strong>Walled City Park – South Gate</strong><br/>“Entrance to a vanished maze. 城寨已逝，陰魂未散。”' },
+    { name: 'Kowloon Walled City Park – Yamen (衙門)', coords: [22.33393, 114.19228], html: '<strong>Yamen (Former Qing Administration)</strong><br/>“Echoes of authority amid whispers of the past.”' }
+  ];
+  const wcMarkers = wcStops.map(s => L.marker(s.coords, { icon: templeIcon }).bindPopup(`<div style="min-width:200px"><div><strong>${s.name}</strong></div><div>${s.html}</div></div>`));
+  const wcRoute = L.polyline(wcStops.map(s => s.coords), { color:'#8a2be2', weight:3 });
+
+  let wcVisible = false;
+  const toggleBtn = document.getElementById('toggleExtension');
+  toggleBtn.addEventListener('click', () => {
+    wcVisible = !wcVisible;
+    if (wcVisible) {
+      wcMarkers.forEach(m => m.addTo(map));
+      wcRoute.addTo(map);
+      const group = new L.featureGroup([...wcMarkers, wcRoute]);
+      map.fitBounds(group.getBounds().pad(0.2));
+    } else {
+      wcMarkers.forEach(m => map.removeLayer(m));
+      map.removeLayer(wcRoute);
+      const group = new L.featureGroup([...mainMarkers, mainRoute]);
+      map.fitBounds(group.getBounds().pad(0.2));
+    }
+  });
+
+  // Locate-me button
+  document.getElementById('locateBtn').addEventListener('click', () => {
+    if (!navigator.geolocation) { alert('Geolocation not supported'); return; }
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        const latlng = [pos.coords.latitude, pos.coords.longitude];
+        L.marker(latlng).addTo(map).bindPopup('You are here').openPopup();
+        map.setView(latlng, 17);
+      },
+      err => alert('Unable to access location: ' + err.message),
+      { enableHighAccuracy:true, maximumAge:60000, timeout:10000 }
+    );
+  });
+
+  // Register service worker
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./service-worker.js');
+    });
+  }
+
+  // Handle beforeinstallprompt if you want to add a custom install flow later
+  let deferredPrompt;
+  window.addEventListener('beforeinstallprompt', (e) => { deferredPrompt = e; });
+</script>
+</body>
+</html>
